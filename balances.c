@@ -73,11 +73,11 @@ int main(int argc, char *argv[])
 	/* Read input block files. */
 	for (i = 1; i < argc; i++) {
 		char *filename;
-		struct block b;
+		struct block curr_block;
 		int rc;
 
 		filename = argv[i];
-		rc = block_read_filename(&b, filename);
+		rc = block_read_filename(&curr_block, filename);
 		if (rc != 1) {
 			fprintf(stderr, "could not read %s\n", filename);
 			exit(1);
@@ -89,34 +89,30 @@ int main(int argc, char *argv[])
 		// Compute hash
 		bool valid = true;
 		hash_output curr_hash;
-		curr_hash = block_hash(b, h);
+		curr_hash = block_hash(curr_block, curr_hash);
 
 		// If the block has height 0 (the “genesis block”), its SHA256 hash must be the hardcoded value 0000000e5ac98c789800702ad2a6f3ca510d409d6cca892ed1c75198e04bdeec. (Use the byte32_cmp function.)
-		if (b->height == 0) {
-			if (byte32_cmp(curr_hash, GENESIS_BLOCK_HASH) == 1) { 
-				valid = valid & true; // block is valid
-			} else {  
+		if (curr_block->height == 0) {
+			if (byte32_cmp(curr_hash, GENESIS_BLOCK_HASH) != 0) { 
 				valid = valid & false; // block is invalid
 			}
 		}
 
 		// • The hash of the block must be smaller than TARGET_HASH; i.e., it must start with 24 zero bits. (Use the hash_output_is_below_target function.)
-		if (hash_output_is_below_target(h) == 1) {
-			valid = valid & true; // block is valid
-		} else {
+		if (hash_output_is_below_target(curr_hash) != 1) {
 			valid = valid & false; // block is invalid
 		}
 
 		// • The height of both of the block's transactions must be equal to the block's height.
-		if (b->reward_tx.height == b->height && b->normal_tx.height == b->height) {
-			valid = valid & true; // block is valid
-		} else {
+		if (curr_block->reward_tx.height != curr_block->height && curr_block->normal_tx.height != curr_block->height) {
 			valid = valid & false; // block is invalid			
 		}
 
 		// add to list of valid blocks
 		if (valid) {
 			// add to list of valid blocks
+			struct blockchain_node bcn;
+			bcn->b = curr_block;
 		}
 	}
 
@@ -127,11 +123,11 @@ int main(int argc, char *argv[])
 
 	for (i = 1; i < argc; i++) {
 		char *filename;
-		struct block b;
+		struct block curr_block;
 		int rc;
 
 		filename = argv[i];
-		rc = block_read_filename(&b, filename);
+		rc = block_read_filename(&curr_block, filename);
 		if (rc != 1) {
 			fprintf(stderr, "could not read %s\n", filename);
 			exit(1);
@@ -141,9 +137,35 @@ int main(int argc, char *argv[])
 
 	}
 
-// validity
-// If a block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
-// reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
+	// Check validity
+	// If current block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
+	if (curr_block->height > 0) {
+		// prev_block = 
+		if (prev_block->height == curr_block->height - 1) {
+			valid = valid & true; // block is valid
+		} else {
+			valid = valid & false; // block is invalid						
+		}
+	}
+
+	// reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
+	if (byte32_is_zero(curr_block->reward_tx.prev_transaction_hash) && byte32_is_zero(curr_block->reward_tx.src_signature.r) && byte32_is_zero(curr_block->reward_tx.src_signature.s)) {
+		valid = valid & true; // block is valid
+	} else {
+		valid = valid & false; // block is invalid			
+	}
+
+	// If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. But if it is not zero
+	if (byte32_is_zero(curr_block->normal_tx.prev_transaction_hash)) {
+		// • The transaction referenced by normal_tx.prev_transaction_hash must exist
+		// as either the reward_tx or normal_tx of an ancestor block. (Use the
+		// transaction_hash function.)
+		// • The signature on normal_tx must be valid using the dest_pubkey of the previous
+		// transaction that has hash value normal_tx.prev_transaction_hash. (Use the
+		// transaction_verify function.)
+		// • The coin must not have already been spent: there must be no ancestor block that
+		// has the same normal_tx.prev_transaction_hash.
+	}
 
 	struct balance *balances = NULL, *p, *next;
 	/* Print out the list of balances. */
