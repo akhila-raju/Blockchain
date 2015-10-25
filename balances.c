@@ -201,6 +201,7 @@ decrypt = &head;
 while(decrypt!=NULL) {
 	valid_nodes[curr_index] = decrypt->bNode;
 	decrypt = decrypt->next;
+	curr_index = curr_index+1;
 }
 
 
@@ -337,9 +338,6 @@ while(decrypt!=NULL) {
 		}
 	}
 	temp_func(block_last_added);
-static struct balance *balance_add(struct balance *balances,
-	struct ecdsa_pubkey *pubkey, int amount)
-
 
 	/* Print out the list of balances. */
 	for (p = balances; p != NULL; p = next) {
