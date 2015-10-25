@@ -69,7 +69,7 @@ static struct balance *balance_add(struct balance *balances,
 int main(int argc, char *argv[])
 {
 	int i;
-	// array of blockchain nodes
+	// array of blockchain nodes CHANGE TO LINKED LIST
 	struct blockchain_node *valid_nodes;
 	valid_nodes = malloc(sizeof(struct blockchain_node) * argc);
 	int valid_nodes_index = 0;
@@ -92,8 +92,7 @@ int main(int argc, char *argv[])
 
 		// Compute hash
 		bool valid = true;
-		hash_output curr_hash;
-		curr_hash = block_hash(curr_block, curr_hash);
+		hash_output curr_hash = block_hash(curr_block, curr_hash);
 
 		// If the block has height 0 (the “genesis block”), its SHA256 hash must be the hardcoded value 0000000e5ac98c789800702ad2a6f3ca510d409d6cca892ed1c75198e04bdeec. (Use the byte32_cmp function.)
 		if (curr_block->height == 0) {
@@ -118,74 +117,126 @@ int main(int argc, char *argv[])
 			struct blockchain_node curr_bcn;
 			curr_bcn->b = curr_block;
 			curr_bcn->is_valid = 1;
-			// add to array of blockchain_nodes
+			// add to array of blockchain_nodes CHANGE TO LINKED LIST
 			valid_nodes[valid_nodes_index] = curr_bcn;
 			valid_nodes_index++;
 		}
+
+
 	}
 
 	/* Organize into a tree, check validity, and output balances. */
 	/* TODO */
 
 	// sort list of valid blocks
-	/* INSERT SORT FUNCTION */
+	/* INSERT SORT FUNCTION HERE */
 
-	// NEED TO ADD FOR LOOP FOR CHECKING PARENTS. THEN ASSIGN PARENT IF VALID.
 
-	valid_nodes_index = 0; // set index to 0 again
 
-	for (i = 1; i < argc; i++) {
+	valid_nodes[0].parent = NULL; // this is the root
 
-		struct blockchain_node curr_bcn = valid_nodes[valid_nodes_index]; // returns bcn
 
-		// Check validity
-		// If current block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
-		if (curr_bcn->b.height > 0) {
-			struct block prev_block = curr_bcn->parent->b;
-			if (prev_block->height != curr_block->height - 1) {
-				valid = valid & false; // fix this
+	int prev_index = 0; // keep track of first item of prev height
+	uint32_t old_height = 0; // keep track of prev height to compare to curr_index height. increment every time we encounter a new height
+
+	for (curr_index = 1; curr_index < argc; curr_index++) {
+		
+		// if the block's height is a new height we haven't encountered before, update old_height
+		// ex. last element was height 2, curr element is height 3. old_height was equal to 1, now update old_height to 2.
+		uint32_t curr_height = valid_nodes[curr_index]->b.height;
+		if (curr_height != old_height + 1) {
+			old_height++;
+			// update previous height index until we find the element that contains the updated old_height
+			// ex. last element we were pointing to was arr[1] where height == 1, now we want arr[prev_index] to point to arr[3] where height == 2
+			while (curr_height != valid_nodes[prev_index]->b.height + 1) {
+				prev_index++;
 			}
 		}
 
-		// reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
-		if (byte32_is_zero(curr_bcn->b->reward_tx.prev_transaction_hash) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.r) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.s) != 1) {
-			valid = valid & false; // block is invalid			
+		int temp_index = prev_index; // created to loop through all elements of prev height
+		// FIX THIS ^^^ BECAUSE OTHERWISE IT WILL POINT TO THE SAME LOCATION AS PREV_INDEX WHICH WE DON'T WANT TO CHANGE
+
+		while (valid_nodes[temp_index]->b.height != curr_height) { // while the element we are looking at is of the previous height
+			// check validity, set parent if valid
+
+			temp_index++;
 		}
-
-		// If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. But if it is not zero:
-		struct transaction trans = curr_bcn->b->normal_tx;
-		hash_output prev_trans_hash = trans->prev_transaction_hash;
-
-		struct blockchain_node parent_bcn = valid_nodes[valid_nodes_index]->parent;
-
-		if (byte32_is_zero(prev_trans_hash) != 1) {
-
-			// • The transaction referenced by normal_tx.prev_transaction_hash must exist
-			// as either the reward_tx or normal_tx of an ancestor block. (Use the
-			// transaction_hash function.)
-			bool doesnotexist = true;
-			hash_output reward_trans;
-			hash_output normal_trans;
-			while (parent_bcn != NULL && doesnotexist) {
-				transaction_hash(parent_bcn->b->reward_tx, reward_trans);
-				transaction_hash(parent_bcn->b->normal_tx, normal_trans);
-				if (byte32_cmp(prev_trans_hash, reward_trans) == 0 || byte32_cmp(prev_trans_hash, normal_trans) == 0) {
-					doesnotexist = doesnotexist & false; // transaction exists in ancestor
-				}
-				parent_bcn = parent_bcn->parent;
-			}
-
-			// • The signature on normal_tx must be valid using the dest_pubkey of the previous
-			// transaction that has hash value normal_tx.prev_transaction_hash. (Use the
-			// transaction_verify function.)
-
-
-			// • The coin must not have already been spent: there must be no ancestor block that
-			// has the same normal_tx.prev_transaction_hash.
-		}
-
 
 	}
+
+
+
+
+	// for (nodes_index = 0; nodes_index < argc; nodes_index++) {
+
+	// 	struct blockchain_node curr_bcn = valid_nodes[nodes_index]; // returns bcn
+
+
+	// 	// check each block in the list to assign the parent.
+	// 	for (i = 0; i < argc; i++) {
+
+	// 		struct blockchain_node curr_bcn = valid_nodes[valid_nodes_index]; // returns bcn
+
+	// 		// Check validity
+	// 		// If current block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
+	// 		if (curr_bcn->b.height > 0) {
+	// 			struct block prev_block = curr_bcn->parent->b;
+	// 			if (prev_block->height != curr_block->height - 1) {
+	// 				valid = valid & false; // fix this
+	// 			}
+	// 		}
+
+	// 		// // reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
+	// 		if (byte32_is_zero(curr_bcn->b->reward_tx.prev_transaction_hash) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.r) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.s) != 1) {
+	// 			valid = valid & false; // block is invalid			
+	// 		}
+
+	// 		// If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. But if it is not zero:
+	// 		struct transaction trans = curr_bcn->b->normal_tx;
+	// 		hash_output prev_trans_hash = trans->prev_transaction_hash;
+
+	// 		struct blockchain_node parent_bcn = valid_nodes[valid_nodes_index]->parent;
+
+	// 		if (byte32_is_zero(prev_trans_hash) != 1) {
+
+	// 			// • The transaction referenced by normal_tx.prev_transaction_hash must exist
+	// 			// as either the reward_tx or normal_tx of an ancestor block. (Use the
+	// 			// transaction_hash function.)
+	// 			bool doesnotexist = true;
+	// 			hash_output reward_trans;
+	// 			hash_output normal_trans;
+	// 			while (parent_bcn != NULL && doesnotexist) {
+	// 				transaction_hash(parent_bcn->b->reward_tx, reward_trans);
+	// 				transaction_hash(parent_bcn->b->normal_tx, normal_trans);
+	// 				if (byte32_cmp(prev_trans_hash, reward_trans) == 0 || byte32_cmp(prev_trans_hash, normal_trans) == 0) {
+	// 					doesnotexist = doesnotexist & false; // transaction exists in ancestor
+	// 				}
+	// 				parent_bcn = parent_bcn->parent;
+	// 			}
+
+	// 			// • The signature on normal_tx must be valid using the dest_pubkey of the previous
+	// 			// transaction that has hash value normal_tx.prev_transaction_hash. (Use the
+	// 			// transaction_verify function.)
+
+
+
+	// 			// • The coin must not have already been spent: there must be no ancestor block that
+	// 			// has the same normal_tx.prev_transaction_hash
+	// 			parent_bcn = valid_nodes[valid_nodes_index]->parent; //reset to parent
+	// 			while (parent_bcn != NULL && doesnotexist) {
+
+	// 				transaction_hash(parent_bcn->b->reward_tx, reward_trans);
+	// 				transaction_hash(parent_bcn->b->normal_tx, normal_trans);
+	// 				if (byte32_cmp(prev_trans_hash, reward_trans) == 0 || byte32_cmp(prev_trans_hash, normal_trans) == 0) {
+	// 					doesnotexist = doesnotexist & false; // transaction exists in ancestor
+	// 				}
+	// 				parent_bcn = parent_bcn->parent;
+	// 			}
+	// 		}
+
+	// 	}
+
+	// }
 
 	struct balance *balances = NULL, *p, *next;
 	/* Print out the list of balances. */
