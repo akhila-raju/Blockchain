@@ -69,6 +69,10 @@ static struct balance *balance_add(struct balance *balances,
 int main(int argc, char *argv[])
 {
 	int i;
+	// array of blockchain nodes
+	struct blockchain_node *valid_nodes;
+	valid_nodes = malloc(sizeof(struct blockchain_node) * argc);
+	int valid_nodes_index = 0;
 
 	/* Read input block files. */
 	for (i = 1; i < argc; i++) {
@@ -110,9 +114,13 @@ int main(int argc, char *argv[])
 
 		// add to list of valid blocks
 		if (valid) {
-			// add to list of valid blocks
-			struct blockchain_node bcn;
-			bcn->b = curr_block;
+			// assign to blockchain node
+			struct blockchain_node curr_bcn;
+			curr_bcn->b = curr_block;
+			curr_bcn->is_valid = 1;
+			// add to array of blockchain_nodes
+			valid_nodes[valid_nodes_index] = curr_bcn;
+			valid_nodes_index++;
 		}
 	}
 
@@ -120,51 +128,62 @@ int main(int argc, char *argv[])
 	/* TODO */
 
 	// sort list of valid blocks
+	/* INSERT SORT FUNCTION */
+
+
+	valid_nodes_index = 0; // set index to 0 again
 
 	for (i = 1; i < argc; i++) {
-		char *filename;
-		struct block curr_block;
-		int rc;
 
-		filename = argv[i];
-		rc = block_read_filename(&curr_block, filename);
-		if (rc != 1) {
-			fprintf(stderr, "could not read %s\n", filename);
-			exit(1);
+		struct blockchain_node curr_bcn = valid_nodes[valid_nodes_index]; // returns bcn
+
+		// Check validity
+		// If current block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
+		if (curr_bcn->b.height > 0) {
+			struct block prev_block = curr_bcn->parent->b;
+			if (prev_block->height != curr_block->height - 1) {
+				valid = valid & false; // fix this
+			}
 		}
 
-		if 
-
-	}
-
-	// Check validity
-	// If current block has height ≥1, its parent must be a valid block with a height that is 1 smaller.
-	if (curr_block->height > 0) {
-		// prev_block = 
-		if (prev_block->height == curr_block->height - 1) {
-			valid = valid & true; // block is valid
-		} else {
-			valid = valid & false; // block is invalid						
+		// reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
+		if (byte32_is_zero(curr_bcn->b->reward_tx.prev_transaction_hash) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.r) != 1 && byte32_is_zero(curr_bcn->b->reward_tx.src_signature.s) != 1) {
+			valid = valid & false; // block is invalid			
 		}
-	}
 
-	// reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero—reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
-	if (byte32_is_zero(curr_block->reward_tx.prev_transaction_hash) && byte32_is_zero(curr_block->reward_tx.src_signature.r) && byte32_is_zero(curr_block->reward_tx.src_signature.s)) {
-		valid = valid & true; // block is valid
-	} else {
-		valid = valid & false; // block is invalid			
-	}
+		// If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. But if it is not zero:
+		struct transaction trans = curr_bcn->b->normal_tx;
+		hash_output prev_trans_hash = trans->prev_transaction_hash;
 
-	// If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. But if it is not zero
-	if (byte32_is_zero(curr_block->normal_tx.prev_transaction_hash)) {
-		// • The transaction referenced by normal_tx.prev_transaction_hash must exist
-		// as either the reward_tx or normal_tx of an ancestor block. (Use the
-		// transaction_hash function.)
-		// • The signature on normal_tx must be valid using the dest_pubkey of the previous
-		// transaction that has hash value normal_tx.prev_transaction_hash. (Use the
-		// transaction_verify function.)
-		// • The coin must not have already been spent: there must be no ancestor block that
-		// has the same normal_tx.prev_transaction_hash.
+		struct blockchain_node parent_bcn = valid_nodes[valid_nodes_index]->parent;
+
+		if (byte32_is_zero(prev_trans_hash) != 1) {
+
+			// • The transaction referenced by normal_tx.prev_transaction_hash must exist
+			// as either the reward_tx or normal_tx of an ancestor block. (Use the
+			// transaction_hash function.)
+			bool doesnotexist = true;
+			hash_output reward_trans;
+			hash_output normal_trans;
+			while (parent_bcn != NULL && doesnotexist) {
+				transaction_hash(parent_bcn->b->reward_tx, reward_trans);
+				transaction_hash(parent_bcn->b->normal_tx, normal_trans);
+				if (byte32_cmp(prev_trans_hash, reward_trans) == 0 || byte32_cmp(prev_trans_hash, normal_trans) == 0) {
+					doesnotexist = doesnotexist & false; // transaction exists in ancestor
+				}
+				parent_bcn = parent_bcn->parent;
+			}
+
+			// • The signature on normal_tx must be valid using the dest_pubkey of the previous
+			// transaction that has hash value normal_tx.prev_transaction_hash. (Use the
+			// transaction_verify function.)
+
+
+			// • The coin must not have already been spent: there must be no ancestor block that
+			// has the same normal_tx.prev_transaction_hash.
+		}
+
+
 	}
 
 	struct balance *balances = NULL, *p, *next;
