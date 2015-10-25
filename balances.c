@@ -125,13 +125,23 @@ int main(int argc, char *argv[])
 
 	}
 
-	/* Organize into a tree, check validity, and output balances. */
-	/* TODO */
 
 	// sort list of valid blocks
 	/* INSERT SORT FUNCTION HERE */
 
 
+	/* CONSTRUCT TREE */
+	/* 
+															        t
+															       .#.
+															      .###.
+															     .#%##%.
+															    .%##%###.
+															   .##%###%##.  
+															  .#%###%##%##.
+															        #
+															        #
+	*/
 
 	valid_nodes[0].parent = NULL; // this is the root
 
@@ -168,7 +178,7 @@ int main(int argc, char *argv[])
 
 			// CHECKING CONDITION: reward_tx.prev_transaction_hash, reward_tx.src_signature.r, and reward_tx.src_signature.s members must be zero — reward transactions are not signed and do not come from another public key. (Use the byte32_zero function.)
 			if (byte32_is_zero(curr_block->reward_tx.prev_transaction_hash) != 1 && byte32_is_zero(curr_block->reward_tx.src_signature.r) != 1 && byte32_is_zero(curr_block->reward_tx.src_signature.s) != 1) {
-				valid = valid & 0;// block is invalid
+				valid = valid & 0; // block is invalid
 			}
 
 			// CHECKING CONDITION: If normal_tx.prev_transaction_hash is zero, then there is no normal transaction in this block. 
@@ -189,16 +199,16 @@ int main(int argc, char *argv[])
 				struct blockchain_node parent_bcn = valid_nodes[temp_index]; // this variable will be used to compare ancestors		
 				hash_output reward_trans;
 				hash_output normal_trans;
-				bool doesnotexist = 1;
+				bool exists = 0;
 				while (valid && parent_bcn != NULL) {
 					transaction_hash(parent_bcn->b->reward_tx, reward_trans);
 					transaction_hash(parent_bcn->b->normal_tx, normal_trans);
 					if (byte32_cmp(curr_block->normal_tx.prev_transaction_hash, reward_trans) == 0 || byte32_cmp(curr_block->normal_tx.prev_transaction_hash, normal_trans) == 0) {
-						doesnotexist = doesnotexist & 0; // transaction exists in ancestor block
+						exists = exists || 1; // transaction exists in ancestor block
 					}
 					parent_bcn = parent_bcn->parent; // compare to the next ancestor
 				}
-				valid = valid & !doesnotexist; // if the transaction exists, then the block is valid
+				valid = valid & exists; // if the transaction exists, then the block is valid
 
 
 				// CHECKING CONDITION: The coin must not have already been spent: there must be no ancestor block that
