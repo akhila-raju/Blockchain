@@ -147,6 +147,7 @@ int main(int argc, char *argv[])
 	int parent_start_index = 0; // keep track of first item of parent height
 	int parent_end_index = 0; // keep track of last item of parent height
 	uint32_t parent_height = 0; // keep track of parent height to compare to curr_index height. increment every time we encounter a new height
+	struct block *block_last_added;
 
 	for (curr_index = 1; curr_index < argc; curr_index++) {
 		
@@ -225,6 +226,7 @@ int main(int argc, char *argv[])
 			// if the temp_index element passes all validity tests, make it the parent
 			if (valid) {
 				valid_nodes[curr_index]->parent = valid_nodes[temp_index];
+				block_last_added = valid_nodes[curr_index]; // update last block added to curr block
 				break; // exit while loop since we have found a parent for the current element we are looking at
 			} else {
 				valid_nodes[curr_index]->is_valid = 0;
@@ -233,6 +235,16 @@ int main(int argc, char *argv[])
 		}
 
 	}
+
+	int length = 1;
+	while (block_last_added->parent != NULL) {
+		length++;
+		block_last_added = block_last_added->parent;
+	}
+
+
+	/* ADD BALANCES HERE */
+
 
 	struct balance *balances = NULL, *p, *next;
 	/* Print out the list of balances. */
