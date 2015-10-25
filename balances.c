@@ -69,7 +69,6 @@ static struct balance *balance_add(struct balance *balances,
 int main(int argc, char *argv[])
 {
 	int i;
-	// array of blockchain nodes CHANGE TO LINKED LIST
 	struct blockchain_node *valid_nodes;
 	valid_nodes = malloc(sizeof(struct blockchain_node) * argc);
 	int valid_nodes_index = 0;
@@ -127,6 +126,84 @@ int main(int argc, char *argv[])
 
 	// sort list of valid blocks
 	/* INSERT SORT FUNCTION HERE */
+
+
+struct block_listNode {
+	struct blockchain_node *bNode;
+	struct block_listNode *prev;
+	struct block_listNode *next; //assuming that pointers point to NULL by default
+}
+
+//Array to list conversion
+struct block_listNode head;
+head.bNode = valid_nodes[0]
+head.prev = NULL;
+struct block_listNode *curr;
+curr = &head;
+for(int i = 1; i=valid_nodes_index; i++) {
+	struct block_listNode newLNode;
+	newLNode.bNode = valid_nodes[i];
+	newLNode.prev = curr;
+	curr->next = &newLNode;
+	curr = &newLNode
+}
+
+int listNodeHeight(struct block_listNode *input) {
+	struct blockchain_node currChain = input -> bNode;
+	struct block currBlock = currChain.b;
+	int currHeight = currBlock.height;
+	return currHeight;
+}
+
+void quicksort_blocks(struct block_listNode *in) {	
+	if (in->next == NULL) {
+		return;
+	}
+	struct block_listNode *currentNode = in->next;
+	struct block_listNode *lowerHead; //pointer to listNode
+	struct block_listNode *upperHead; //pointer to listNode
+	currHeight = listNodeHeight(in);
+	while(currentNode != NULL) {
+		if (listNodeHeight(currentNode) < currHeight) {
+			struct block_listNode temp;
+			temp.bNode = currNode->bNode;
+			temp.next = lowerHead;
+			lowerHead->prev = &temp;
+			lowerHead = &temp;
+		}
+		else {
+			struct block_listNode temp;
+			temp.bNode = currNode->bNode;
+			temp.next = upperHead;
+			upperHead->prev = &temp;
+			upperHead = &temp;
+		}
+		currentNode = currentNode->next;
+	}
+	quicksort_blocks(lowerHead);
+	quicksort_blocks(upperHead);
+	in->next = upperHead;
+	upperHead->prev = in //tie the upper chain to 'in'
+	currentNode = lowerHead;
+	while (currentNode->next != NULL) {
+		currentNode = currentNode->next
+	}
+	*in->prev = currentNode;
+	currentNode->next = in //Tie the lower chain to 'in'
+	in = lowerHead;
+}
+
+quicksort_blocks(&head);
+
+int curr_index = 0
+struct block_ListNode *decrypt;
+decrypt = &head;
+while(decrypt!=NULL) {
+	valid_nodes[curr_index] = decrypt->bNode;
+	decrypt = decrypt->next;
+}
+
+
 
 
 	/* CONSTRUCT TREE */
@@ -244,9 +321,26 @@ int main(int argc, char *argv[])
 
 
 	/* ADD BALANCES HERE */
-
-
 	struct balance *balances = NULL, *p, *next;
+
+	void temp_func(struct block *curr) {
+		if (curr == NULL) {
+			return
+		}
+		else {
+			temp_func(curr->parent);
+			balances = balance_add(balances, curr->reward_tx.dest_pubkey, 1);
+			if (curr->normal_tx.prev_transaction_hash != 0) {
+				balances = balance_add(balances, curr->normal_tx.dest_pubkey, 1);
+				balances = balance_add(balances, curr->prev_transaction.dest_pubkey, -1);
+			}
+		}
+	}
+	temp_func(block_last_added);
+static struct balance *balance_add(struct balance *balances,
+	struct ecdsa_pubkey *pubkey, int amount)
+
+
 	/* Print out the list of balances. */
 	for (p = balances; p != NULL; p = next) {
 		next = p->next;
@@ -256,3 +350,36 @@ int main(int argc, char *argv[])
 
 	return 0;
 }
+
+
+const EC_KEY mykey = ????????; //our strong key, default genkey.c code
+const EC_KEY weakKey = ????????; //First weak key, generated from random seed 1234
+const EC_KEY weakTimeKey = ???????; //Second weak key, generated from time-based seed
+
+
+
+// STEP 2!!!!!!!!!!!!!!-----------------------------------------------------
+// weakTimeKey is generated using the time-based algorithm in genkey.c (see Step 2, part 2)
+// block4 is the  block at height 4!!!!!
+// mykey is NOT the key generated from the short function in genkey.c- it's our own key
+// weakKey is the weak priv key from genkey.c
+struct block block4 = (block_last_added->parent)->b
+struct block block5 = block_last_added->b
+
+struct block newBlock1;
+block_init(&newBlock1, &(block_last_added->b));
+transaction_set_dest_privkey(newBlock1.reward_tx, mykey); //Set target to our key
+transaction_set_prev_transation(newBlock1.normal_tx, block4.normal_tx);
+transaction_set_dest_privkey(newBlock1.normal_tx, mykey);
+transaction_sign(newBlock1.normal_tx, weakKey);
+block_mine(newBlock1);
+block_write_filename(newBlock1, "myblock1.blk");
+
+struct block newBlock2;
+block_init(&newBlock2, &newBlock1);
+transaction_set_dest_privkey(newBlock2.reward_tx, mykey);
+transaction_set_prev_transation(newBlock1.normal_tx, block5.reward_tx);
+transaction_set_dest_privkey(newBlock2.normal_tx, mykey);
+transaction_sign(newBlock2.normal_tx, weakTimeKey);
+block_mine(newBlock2);
+block_write_filename(newBlock2, "myblock2.blk");
