@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 	// sort list of valid blocks
 	/* INSERT SORT FUNCTION */
 
-	// NEED TO ADD FOR LOOP FOR ch
+	// NEED TO ADD FOR LOOP FOR CHECKING PARENTS. THEN ASSIGN PARENT IF VALID.
 
 	valid_nodes_index = 0; // set index to 0 again
 
