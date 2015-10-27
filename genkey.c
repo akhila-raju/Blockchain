@@ -74,20 +74,29 @@ int main(int argc, char *argv[])
 
 	filename = argv[1];
 
-	// key = generate_key();  THIS GENERATES A SECURE KEY!!!!!!
-	unsigned char buf[32]
-	int i;
-	srand(1234);
-	for (i = 0; i < 32; i++) {
-		buf[i] = rand() & 0xff;
-	}
-	key = generate_key_from_buffer(buf);
+	// key = generate_key(); // THIS GENERATES A SECURE KEY!!!!!!
+	// unsigned char buf[32];
+	// int i;
+	// srand(1234);
+	// for (i = 0; i < 32; i++) {
+	// 	buf[i] = rand() & 0xff;
+	// }
+	// key = generate_key_from_buffer(buf);
 	// ABOVE GENERATES WEAK KEY!!!!
-	if (key == NULL) {
-		fprintf(stderr, "error generating key\n");
-		exit(1);
+	time_t = 1443700800-1000;
+	while(KEYNOTEQUAL) { //CORRECT THIS AS SOON AS I CAN?
+		time_t = 1443700800 + 1;
+		unsigned char buf[32];
+		int i;
+		srand(cur_time);
+		for (i = 0; i < 32; i++) {
+			buf[i] = rand() & 0xff;
+		}
+		if (key == NULL) {
+			fprintf(stderr, "error generating key\n");
+			exit(1);
+		}
 	}
-
 	rc = key_write_filename(filename, key);
 	if (rc != 1) {
 		fprintf(stderr, "error saving key\n");
