@@ -70,9 +70,10 @@ static struct balance *balance_add(struct balance *balances,
 int main(int argc, char *argv[])
 {
 	int i;
-	struct blockchain_node *valid_nodes;
-	valid_nodes = malloc(sizeof(struct blockchain_node) * argc);
+	printf("filenameuck this");
+	struct blockchain_node valid_nodes[argc];
 	int valid_nodes_index = 0;
+	printf("started out");
 
 	/* Read input block files. */
 	for (i = 1; i < argc; i++) {
@@ -126,6 +127,7 @@ int main(int argc, char *argv[])
 
 
 	}
+	printf("Made it this far");
 
 
 	// sort list of valid blocks
@@ -198,12 +200,13 @@ void quicksort_blocks(struct block_listNode *in) {
 
 quicksort_blocks(&head);
 
-int curr_index = 0;
-struct block_ListNode *decrypt;
+int curr_index2 = 0;
+struct block_listNode *decrypt;
 decrypt = &head;
 while(decrypt!=NULL) {
-	valid_nodes[curr_index] = (decrypt->bNode);
+	valid_nodes[curr_index2] = *(decrypt->bNode);
 	decrypt = decrypt->next;
+	curr_index2++;
 }
 
 
@@ -364,7 +367,6 @@ while(decrypt!=NULL) {
 		free(p);
 	}
 
-	// return 0;
 
 
 // //-------------------------------------------------------------------------------
