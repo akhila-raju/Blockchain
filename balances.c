@@ -70,10 +70,10 @@ static struct balance *balance_add(struct balance *balances,
 int main(int argc, char *argv[])
 {
 	int i;
-	printf("filenameuck this");
+	printf("filenameuck this\n");
 	struct blockchain_node valid_nodes[argc];
 	int valid_nodes_index = 0;
-	printf("started out");
+	printf("started out\n");
 
 	/* Read input block files. */
 	for (i = 1; i < argc; i++) {
@@ -117,12 +117,15 @@ int main(int argc, char *argv[])
 
 		// add to list of valid blocks
 		if (valid) {
+
 			// assign to blockchain node
 			struct blockchain_node curr_bcn;
 			curr_bcn.b = *curr_block;
 			curr_bcn.is_valid = 1;
 			valid_nodes[valid_nodes_index] = curr_bcn;
 			valid_nodes_index++;
+		} else {
+			continue;
 		}
 
 
